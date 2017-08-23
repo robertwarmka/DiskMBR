@@ -11,9 +11,8 @@ int main(int argc, char** argv) {
     // Variable declaration
     int i, status;
     char buf[MBR_SIZE] = {0};
+    disk_info disk = {0};
     partition_info* partitions = malloc(NUM_PARTITIONS * sizeof(partition_info));
-    // Set buf to 0
-    memset(buf, 0, sizeof(buf));
     // Set partitions to 0
     memset(partitions, 0, NUM_PARTITIONS * sizeof(partitions));
 
@@ -40,7 +39,7 @@ int main(int argc, char** argv) {
 
     printf("\n");
     i = 440;
-    while(i < 448) {
+    while(i < 446) {
         printf("%02hhX ", buf[i]);
         ++i;
     }
@@ -51,9 +50,22 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // Pass in a pointer to the disk_info struct to keep disk_info on the stack
+    status = populate_disk_info(buf, &disk);
+    if(status != 0) {
+        fprintf(stderr, "ERROR: populate_disk_info returned an error");
+        return 1;
+    }
+
+    if(disk.valid) {
+        printf("%04X\n", disk.disk_signature);
+        printf("%02hX\n", disk.copy_protected);
+    }
+
     status = populate_partition_info(buf, partitions, NUM_PARTITIONS);
     if(status != 0) {
-        fprintf(stderr, "We have a problem\n");
+        fprintf(stderr, "ERROR: populate_partition_info returned an error");
+        return 1;
     }
 
     // Free head-allocated memory

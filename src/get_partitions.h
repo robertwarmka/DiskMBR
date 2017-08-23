@@ -27,6 +27,17 @@ unsigned int get_head(unsigned char data);
 // Pulls the sector info out of the 1 byte that contains it in the CHS byte triple
 unsigned int get_sector(unsigned char data);
 
+// This function will populate the disk info struct passed in.
+//
+// The parameters are as follows:
+// 1. buf: The character buffer that holds the MBR data
+//
+// 2. disk: The disk_info struct pointer that holds the disk_info struct
+//
+// Return: This function will return 0 on success, and -1 on error, with errno set to the
+// appropriate value
+int populate_disk_info(char* buf, disk_info* disk);
+
 // This function will populate the partition info struct passed in.
 //
 // The parameters are as follows:

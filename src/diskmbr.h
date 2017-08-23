@@ -45,15 +45,34 @@
 #define LBA_COUNT_OFFSET 12
 
 // If we have a modern boot MBR, byte 440 will begin the disk signature
-#define DISK_SIGNATURE_LOCATION 440
+#define DISK_SIG_LOC 440
+
+// Size of disk signature in bytes
+#define DISK_SIG_SIZE 4
 
 // To check if bytes 440-443 are a real signature (and not boot code), check if bytes 444-445
 // are either 0x0000 or 0x5A5A, meaning not copy protected or copy protected
-#define DISK_SIGNATURE_VERIFICATION 444
+#define COPY_PROT_LOC 444
+
+// Size of copy protection in bytes
+#define COPY_PROT_SIZE 2
+
 #define NOT_COPY_PROTECTED 0x0000
 #define COPY_PROTECTED 0x5A5A
 
 /// Structs
+typedef struct {
+    // 4 byte disk signature, if one exists
+    unsigned int disk_signature;
+    // 2 bytes to specify if the disk is copy protected or not. If it is copy protected,
+    // the bytes take the value 0x5A5A. If not, the value is 0x0000. All other values are invalid
+    unsigned short copy_protected;
+    // If any bytes for the signature or copy protection are non-zero, this struct will be valid,
+    // Otherwise if everything is 0, or the copy protection != (0x0000 || 0x5A5A), then the struct
+    // is invalid
+    int valid;
+} disk_info;
+
 typedef struct {
     // Drive status
     unsigned char status;

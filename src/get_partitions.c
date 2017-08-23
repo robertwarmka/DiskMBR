@@ -7,8 +7,13 @@
 #define MAGIC_BYTES 0x55AA
 #define PARTITION_LOC 446
 #define PARTITION_SIZE 16
-#define DISK_SIGNATURE_LOCATION 440
-#define DISK_SIGNATURE_VERIFICATION 444
+
+#define DISK_SIG_LOC 440
+#define DISK_SIG_SIZE 4
+
+#define COPY_PROT_LOC 444
+#define COPY_PROT_SIZE 2
+
 #define NOT_COPY_PROTECTED 0x0000
 #define COPY_PROTECTED 0x5A5A
 
@@ -64,6 +69,65 @@ int valid_mbr(char* buf, int buf_size) {
     }
     return 0;
 }
+/*
+typedef struct {
+    // 4 byte disk signature, if one exists
+    unsigned int disk_signature;
+    // 2 bytes to specify if the disk is copy protected or not. If it is copy protected,
+    // the bytes take the value 0x5A5A. If not, the value is 0x0000. All other values are invalid
+    unsigned short copy_protected;
+    // If any bytes for the signature or copy protection are non-zero, this struct will be valid,
+    // Otherwise if everything is 0, or the copy protection != (0x0000 || 0x5A5A), then the struct
+    // is invalid
+    int valid;
+} disk_info;
+#define DISK_SIG_LOC 440
+#define DISK_SIG_SIZE 4
+#define COPY_PROT_LOC 444
+#define COPY_PROT_SIZE 2
+*/
+int populate_disk_info(char* buf, disk_info* disk) {
+    int valid_loop;
+    int disk_signature_end = DISK_SIG_LOC + DISK_SIG_SIZE + COPY_PROT_SIZE;
+
+    if(buf == NULL) {
+        fprintf(stderr, "ERROR: buf character array is null. Please pass in a valid buffer\n");
+        return -1;
+    }
+
+    if(disk == NULL) {
+        fprintf(stderr, "ERROR: disk_info struct pointer is null. Please pass in a valid struct pointer\n");
+        return -1;
+    }
+
+    // Populate the members of disk_info with the values from the appropriate locations in the buffer
+    // These will also be used later to determine the validity of the data
+    disk->disk_signature = get_int(buf[DISK_SIG_LOC + 3], buf[DISK_SIG_LOC + 2],
+                                   buf[DISK_SIG_LOC + 1], buf[DISK_SIG_LOC]);
+
+    // NOTE: This can be written to accomodate for little endian or not, because the only two valid
+    // values for copy_protected are 0x0000 and 0x5A5A, it doesn't matter what order the bytes are
+    // loaded in as, because both bytes will hold the same value, so endianness doesn't matter here
+    disk->copy_protected = get_short(buf[COPY_PROT_LOC + 1], buf[COPY_PROT_LOC]);
+
+    // Check to make sure we have valid disk data
+    //
+    // First, the disk signature must be non-zero. I don't think a disk signature can be non-zero
+    // Second, make sure the copy protection is either 0x0000 or 0x5A5A. All other values are invalid
+    //
+    // So if both of these are true, we are valid, otherwise we are not.
+    if(disk->disk_signature != 0 && (disk->copy_protected == NOT_COPY_PROTECTED || disk->copy_protected == COPY_PROTECTED)) {
+        disk->valid = 1;
+    } else {
+        disk->valid = 0;
+    }
+    // The one case that can slip through is if a legacy
+    // MBR uses at least up to byte 440, up to byte 443 for boot code, but leaves bytes 444-445
+    // as 0. This then leaves the signature location non-zero, but it leaves the copy protection
+    // location 0 (a valid value), which will trick this function into thinking the drive has a
+    // valid signature. An interesting side effect if it ever comes up.
+    return 0;
+}
 
 unsigned int get_cylinder(unsigned char lower, unsigned char upper) {
     // Cylinder contained in the second and third bytes of the CHS triple, with the third byte containing bits 0-7,
@@ -85,7 +149,6 @@ unsigned int get_sector(unsigned char data) {
     // so just bit-wise AND it with 0x3F (00111111b) to get the sector count
     return (unsigned int)(data & 0x3F);
 }
-
 
 int populate_partition_info(char* buf, partition_info* partitions, int num_partitions) {
     // Set the offset to PARTITION_LOC, increment by PARTITION_SIZE
