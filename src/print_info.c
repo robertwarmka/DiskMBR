@@ -304,7 +304,7 @@ void print_partitions(partition_info* partitions, int num_partitions) {
 
             printf("Start LBA: %llu - ", partitions[count].start_lba);
             printf("End LBA: %llu - ", partitions[count].start_lba + partitions[count].sector_count);
-            printf("Sector Count: %llu ", partitions[count].sector_count);
+            printf("LBA Count: %llu ", partitions[count].sector_count);
             printf("\n\n");
         }
     }
