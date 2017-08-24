@@ -1,5 +1,5 @@
 # DiskMBR
-https://travis-ci.org/robertwarmka/DiskMBR.svg?branch=master
+[![Build Status](https://travis-ci.org/robertwarmka/DiskMBR.svg?branch=master)](https://travis-ci.org/robertwarmka/DiskMBR)
 
 ## Overview
 This program can read the contents of your drive's MBR, much like the popular Linux utility, fdisk.
@@ -52,6 +52,6 @@ sudo ./diskmbr </path/to/your-device>
 Don't forget to sudo for all devices that need superuser permissions!
 
 ## Clean Up
-For a normal object & executable removal, execute `make clean`
-For a more thorough clean that removes Makefiles, execute `make distclean`
+For a normal object & executable removal, execute `make clean` 
+For a more thorough clean that removes Makefiles, execute `make distclean` 
 For the most thorough clean, removing cache files as well, execute `make maintainer-clean`
