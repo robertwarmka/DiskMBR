@@ -1,6 +1,7 @@
 #include "print_info.h"
 #include <stdio.h>
 
+// A list of all partition types - as found on Wikipedia.
 const char* const partition_types[] = {
     "Empty", // 0x00
     "FAT12", // 0x01
@@ -259,6 +260,7 @@ const char* const partition_types[] = {
     "XENIX Bad Block Table" // 0xFF
 };
 
+// Print disk info
 void print_disk(disk_info* disk) {
     if(disk->valid) {
         // Print disk signature as 8 hex characters
@@ -267,14 +269,19 @@ void print_disk(disk_info* disk) {
         printf("Copy protected: ");
         // Print yes or no depending on if it is copy protected or not
         if(disk->copy_protected) {
-            printf("Yes"); 
+            printf("Yes\n"); 
         } else {
-            printf("No");
+            printf("No\n");
         }
-        printf("\n\n");
+
+        if(disk->size > 0) {
+            printf("Size: %gGB (%lu bytes)\n", (double)disk->size / (1024.0*1024.0*1024.0), disk->size);
+        }
+        printf("\n");
     }
 }
 
+// Print partition info
 void print_partitions(partition_info* partitions, int num_partitions) {
     int count;
     for(count = 0; count < num_partitions; ++count) {
@@ -291,6 +298,10 @@ void print_partitions(partition_info* partitions, int num_partitions) {
 
             printf("Partition type: %s\n", partition_types[partitions[count].partition_type]);
 
+            printf("Cylinder, Head, Sector\n");
+            printf("Start: C: %4d, H: %3d, S: %2d\n", partitions[count].start_cylinder, partitions[count].start_head, partitions[count].start_sector);
+            printf("End:   C: %4d, H: %3d, S: %2d\n", partitions[count].end_cylinder, partitions[count].end_head, partitions[count].end_sector);
+
             printf("Start LBA: %llu - ", partitions[count].start_lba);
             printf("End LBA: %llu - ", partitions[count].start_lba + partitions[count].sector_count);
             printf("Sector Count: %llu ", partitions[count].sector_count);
@@ -299,8 +310,14 @@ void print_partitions(partition_info* partitions, int num_partitions) {
     }
 }
 
+// Print all disk & partition info
 int print_info(char* device, disk_info* disk, partition_info* partitions, int num_partitions) {
-     if(disk == NULL) {
+    if(device == NULL) {
+        fprintf(stderr, "ERROR: device string is null. Please pass in a valid device\n");
+        return -1;
+    }
+
+    if(disk == NULL) {
         fprintf(stderr, "ERROR: disk_info struct pointer is null. Please pass in a valid struct pointer\n");
         return -1;
     }

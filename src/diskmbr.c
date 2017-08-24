@@ -1,7 +1,6 @@
 // Includes
 #include "diskmbr.h"
 #include <stdio.h>
-#include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
 #include "read_mbr.h"
@@ -11,6 +10,7 @@
 int main(int argc, char** argv) {
     // Variable declaration
     int i, status;
+    off_t device_size;
     char buf[MBR_SIZE] = {0};
     disk_info disk = {0};
     partition_info* partitions = malloc(NUM_PARTITIONS * sizeof(*partitions));
@@ -24,10 +24,13 @@ int main(int argc, char** argv) {
     }
 
     // argv[1] contains the device the user wants to open. MBR_SIZE is the size of the buffer
-    if(read_mbr(argv[1], buf, MBR_SIZE) == -1) {
+    if((device_size = read_mbr(argv[1], buf, MBR_SIZE)) == -1) {
         // We errored upon reading the MBR, return. read_mbr should print the error message
         return 1;
     }
+
+    // Set the disk size
+    disk.size = device_size;
 
     if(valid_mbr(buf, MBR_SIZE) == -1) {
         fprintf(stderr, "ERROR: MBR not valid. Magic bytes should be: %04hX, but they are: %04hX\n", MAGIC_BYTES, get_short(buf[510], buf[511]));

@@ -1,6 +1,8 @@
 #ifndef DISKMBR_H
 #define DISKMBR_H
 
+#include <sys/types.h>
+
 /*
  *
  * Author - Robert Warmka
@@ -67,6 +69,8 @@ typedef struct {
     // 2 bytes to specify if the disk is copy protected or not. If it is copy protected,
     // the bytes take the value 0x5A5A. If not, the value is 0x0000. All other values are invalid
     unsigned short copy_protected;
+    // The size of the disk (as detected in the read_mbr function)
+    off_t size;
     // If any bytes for the signature or copy protection are non-zero, this struct will be valid,
     // Otherwise if everything is 0, or the copy protection != (0x0000 || 0x5A5A), then the struct
     // is invalid

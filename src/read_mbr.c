@@ -1,16 +1,16 @@
 #include "read_mbr.h"
 // Need diskmbr.h for MBR_SIZE
 #include "diskmbr.h"
-#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
 
-// Opens the device passed in, reads the MBR into the passed in buffer
-int read_mbr(const char* device, char* buf, int buf_size) {
+// Opens the device passed in, gets the device size, reads the MBR into the passed in buffer, and closes the device
+off_t read_mbr(const char* device, char* buf, int buf_size) {
     int fd;
     ssize_t read_amt, bytes_returned;
+    off_t device_size;
 
     if(device == NULL) {
         fprintf(stderr, "ERROR: device is null. Please pass in a valid string for the device\n");
@@ -33,6 +33,18 @@ int read_mbr(const char* device, char* buf, int buf_size) {
         return -1;
     }
 
+    // Get device size
+    if((device_size = lseek(fd, 0, SEEK_END)) == -1) {
+        perror("ERROR: lseek failed with status");
+        return -1;
+    }
+
+    if(device_size < MBR_SIZE) {
+        fprintf(stderr, "ERROR: device size is too small to be an MBR\n");
+        return -1;
+    }
+
+    // Reset device to byte 0
     if(lseek(fd, 0, SEEK_SET) == -1) {
         perror("ERROR: lseek failed with status");
         return -1;
@@ -52,5 +64,5 @@ int read_mbr(const char* device, char* buf, int buf_size) {
         perror("ERROR: close failed with status");
     }
 
-    return read_amt;
+    return device_size;
 }

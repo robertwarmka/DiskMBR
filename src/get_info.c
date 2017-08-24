@@ -2,18 +2,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Combine 2 bytes into an unsigned short
 unsigned short get_short(unsigned char upper, unsigned char lower) {
     // Set ret to upper, then shift upper up 8 bits, bit-wise OR with lower, and set that all as ret
     unsigned short ret = (upper << 8) | lower;
     return ret;
 }
 
+// Combine 4 bytes into an unsigned int
 unsigned int get_int(unsigned char uu, unsigned char mu, unsigned char ml, unsigned char ll) {
     // bit-shift the appropriate bytes to the appropriate int locations, and set ret equal to the result
     unsigned int ret = (uu << 24) | (mu << 16) | (ml << 8) | ll;
     return ret;
 }
 
+// Check if the MBR is valid (check last 2 magic bytes)
 int valid_mbr(char* buf, int buf_size) {
     if(buf == NULL) {
         fprintf(stderr, "ERROR: buf character array is null. Please pass in a valid buffer\n");
@@ -31,6 +34,7 @@ int valid_mbr(char* buf, int buf_size) {
     return 0;
 }
 
+// Populate the disk_info struct with relevant data
 int populate_disk_info(char* buf, disk_info* disk) {
     int valid_loop;
     int disk_signature_end = DISK_SIG_LOC + DISK_SIG_SIZE + COPY_PROT_SIZE;
@@ -74,6 +78,7 @@ int populate_disk_info(char* buf, disk_info* disk) {
     return 0;
 }
 
+// Parse cylinder info from CHS triple
 unsigned int get_cylinder(unsigned char lower, unsigned char upper) {
     // Cylinder contained in the second and third bytes of the CHS triple, with the third byte containing bits 0-7,
     // and the second byte containing bits 8 & 9. Thus, bit-wise AND the second byte with 0xC0 (11000000b), set
@@ -84,17 +89,20 @@ unsigned int get_cylinder(unsigned char lower, unsigned char upper) {
     return ret;
 }
 
+// Parse head info from CHS triple
 unsigned int get_head(unsigned char data) {
     // Head contained solely to the first byte of the CHS byte triple, so just cast to unsigned int
     return (unsigned int)data;
 }
 
+// Parse sector info from CHS triple
 unsigned int get_sector(unsigned char data) {
     // Sector contained solely in the lower 6 bits of the second byte of the CHS byte triple,
     // so just bit-wise AND it with 0x3F (00111111b) to get the sector count
     return (unsigned int)(data & 0x3F);
 }
 
+// Populate the partition_info struct array with relevant data
 int populate_partition_info(char* buf, partition_info* partitions, int num_partitions) {
     // Set the offset to PARTITION_LOC, increment by PARTITION_SIZE
     int offset = PARTITION_LOC;
