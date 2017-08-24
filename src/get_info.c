@@ -1,50 +1,6 @@
-#include "get_partitions.h"
+#include "get_info.h"
 #include <stdlib.h>
 #include <stdio.h>
-
-/*
-#define MBR_SIZE 512
-#define MAGIC_BYTES 0x55AA
-#define PARTITION_LOC 446
-#define PARTITION_SIZE 16
-
-#define DISK_SIG_LOC 440
-#define DISK_SIG_SIZE 4
-
-#define COPY_PROT_LOC 444
-#define COPY_PROT_SIZE 2
-
-#define NOT_COPY_PROTECTED 0x0000
-#define COPY_PROTECTED 0x5A5A
-
-#define DRIVE_STATUS_OFFSET 0
-#define CHS_START_OFFSET 1
-#define PARTITION_TYPE_OFFSET 4
-#define CHS_END_OFFSET 5
-#define LBA_START_OFFSET 8
-#define LBA_COUNT_OFFSET 12
-
-typedef struct {
-    // Drive status
-    unsigned char status;
-    // Partition type
-    unsigned char partition_type,
-    // Starting CHS (cylinder, head, sector)
-    unsigned int start_cylinder,
-    unsigned int start_head,
-    unsigned int start_sector,
-    // Ending CHS
-    unsigned int end_cylinder,
-    unsigned int end_head,
-    unsigned int end_sector,
-    // Starting LBA
-    unsigned long long start_lba,
-    // Number of sectors
-    unsigned long long sector_count
-    // If this partition_info struct holds valid data, or if it's unused (all 0)
-    int valid;
-} partition_info;
-*/
 
 unsigned short get_short(unsigned char upper, unsigned char lower) {
     // Set ret to upper, then shift upper up 8 bits, bit-wise OR with lower, and set that all as ret
@@ -53,39 +9,28 @@ unsigned short get_short(unsigned char upper, unsigned char lower) {
 }
 
 unsigned int get_int(unsigned char uu, unsigned char mu, unsigned char ml, unsigned char ll) {
-    // 
+    // bit-shift the appropriate bytes to the appropriate int locations, and set ret equal to the result
     unsigned int ret = (uu << 24) | (mu << 16) | (ml << 8) | ll;
     return ret;
 }
 
 int valid_mbr(char* buf, int buf_size) {
+    if(buf == NULL) {
+        fprintf(stderr, "ERROR: buf character array is null. Please pass in a valid buffer\n");
+        return -1;
+    }
     if(buf_size < MBR_SIZE) {
         fprintf(stderr, "ERROR: Buffer size not large enough to check for a valid MBR\n");
         return -1;
     }
+
     unsigned short magic_bytes = get_short(buf[MAGIC_BYTE_LOC], buf[MAGIC_BYTE_LOC + 1]);
     if(magic_bytes != MAGIC_BYTES) {
         return -1;
     }
     return 0;
 }
-/*
-typedef struct {
-    // 4 byte disk signature, if one exists
-    unsigned int disk_signature;
-    // 2 bytes to specify if the disk is copy protected or not. If it is copy protected,
-    // the bytes take the value 0x5A5A. If not, the value is 0x0000. All other values are invalid
-    unsigned short copy_protected;
-    // If any bytes for the signature or copy protection are non-zero, this struct will be valid,
-    // Otherwise if everything is 0, or the copy protection != (0x0000 || 0x5A5A), then the struct
-    // is invalid
-    int valid;
-} disk_info;
-#define DISK_SIG_LOC 440
-#define DISK_SIG_SIZE 4
-#define COPY_PROT_LOC 444
-#define COPY_PROT_SIZE 2
-*/
+
 int populate_disk_info(char* buf, disk_info* disk) {
     int valid_loop;
     int disk_signature_end = DISK_SIG_LOC + DISK_SIG_SIZE + COPY_PROT_SIZE;
@@ -105,7 +50,7 @@ int populate_disk_info(char* buf, disk_info* disk) {
     disk->disk_signature = get_int(buf[DISK_SIG_LOC + 3], buf[DISK_SIG_LOC + 2],
                                    buf[DISK_SIG_LOC + 1], buf[DISK_SIG_LOC]);
 
-    // NOTE: This can be written to accomodate for little endian or not, because the only two valid
+    // INTERESTING NOTE: This can be written to accomodate for little endian or not, because the only two valid
     // values for copy_protected are 0x0000 and 0x5A5A, it doesn't matter what order the bytes are
     // loaded in as, because both bytes will hold the same value, so endianness doesn't matter here
     disk->copy_protected = get_short(buf[COPY_PROT_LOC + 1], buf[COPY_PROT_LOC]);
@@ -154,7 +99,21 @@ int populate_partition_info(char* buf, partition_info* partitions, int num_parti
     // Set the offset to PARTITION_LOC, increment by PARTITION_SIZE
     int offset = PARTITION_LOC;
     int count, valid_loop;
-    //unsigned int cylinder, head, sector;
+
+    if(buf == NULL) {
+        fprintf(stderr, "ERROR: buf character array is null. Please pass in a valid buffer\n");
+        return -1;
+    }
+
+    if(partitions == NULL) {
+        fprintf(stderr, "ERROR: partition_info struct pointer is null. Please pass in a valid struct pointer\n");
+        return -1;
+    }
+
+    if(num_partitions < NUM_PARTITIONS) {
+        fprintf(stderr, "ERROR: number of partitions passed in is too small. Need at least %d partitions, %d passed in\n", NUM_PARTITIONS, num_partitions);
+        return -1;
+    }
 
     for(count = 0; count < num_partitions; ++count) {
         for(valid_loop = offset; valid_loop < offset + PARTITION_SIZE; ++valid_loop) {

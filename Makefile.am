@@ -1,1 +1,2 @@
-SUBDIRS = src . test
+SUBDIRS = test . src
+ACLOCAL_AMFLAGS = -I m4

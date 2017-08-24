@@ -12,6 +12,14 @@ int read_mbr(const char* device, char* buf, int buf_size) {
     int fd;
     ssize_t read_amt, bytes_returned;
 
+    if(device == NULL) {
+        fprintf(stderr, "ERROR: device is null. Please pass in a valid string for the device\n");
+        return -1;
+    }
+    if(buf == NULL) {
+        fprintf(stderr, "ERROR: buf character array is null. Please pass in a valid buffer\n");
+        return -1;
+    }
     if(buf_size < MBR_SIZE) {
         fprintf(stderr, "ERROR: Buffer size is too small\n");
         return -1;
